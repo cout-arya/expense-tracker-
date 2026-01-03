@@ -8,23 +8,30 @@ import {
   LinearScale,
   Tooltip,
   Legend,
+  Filler
 } from 'chart.js';
-import { Download } from 'lucide-react';
+import { Download, Plus, Search, Filter, Trash2 } from 'lucide-react';
 import API from '../utils/api';
 import AddExpenseModal from '../components/AddExpenseModal';
+import { toast } from 'react-toastify';
 
-ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
 function Expense() {
   const [expenseData, setExpenseData] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchExpenses = async () => {
     try {
-      const res = await API.get('/expense/all'); // assuming your expense API route
+      setLoading(true);
+      const res = await API.get('/expense/all');
       setExpenseData(res.data);
     } catch (err) {
       console.error('Failed to fetch expenses:', err.message);
+      toast.error('Failed to load expense data');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,89 +39,182 @@ function Expense() {
     fetchExpenses();
   }, []);
 
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this expense?')) {
+      try {
+        await API.delete(`/expense/${id}`);
+        setExpenseData(prev => prev.filter(item => item._id !== id));
+        toast.success('Expense deleted successfully');
+      } catch (err) {
+        toast.error('Failed to delete expense');
+      }
+    }
+  };
+
   const lineData = {
-    labels: expenseData.map(item =>
-      new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+    labels: expenseData.slice(0, 10).reverse().map(item =>
+      new Date(item.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
     ),
     datasets: [
       {
         label: 'Expense',
-        data: expenseData.map(item => item.amount),
-        fill: false,
-        borderColor: 'rgba(220, 38, 38, 0.8)', 
-        backgroundColor: 'rgba(220, 38, 38, 0.5)',
-        tension: 0.3,
-        pointRadius: 5,
-        pointHoverRadius: 7,
+        data: expenseData.slice(0, 10).reverse().map(item => item.amount),
+        fill: true,
+        borderColor: '#E11D48', // Rose 600
+        backgroundColor: 'rgba(225, 29, 72, 0.1)', // Rose 600 with opacity
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 2,
+        pointBackgroundColor: '#FFFFFF',
+        pointBorderColor: '#E11D48',
       },
     ],
   };
 
   const lineOptions = {
     responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1E293B',
+        padding: 12,
+        titleFont: { family: 'Inter', size: 13 },
+        bodyFont: { family: 'Inter', size: 13 },
+        cornerRadius: 8,
+        displayColors: false,
+        intersect: false,
+      }
+    },
     scales: {
       y: {
         beginAtZero: true,
-        ticks: {
-          stepSize: 2500,
-        },
+        grid: { color: '#F1F5F9' },
+        ticks: { font: { family: 'Inter' }, color: '#64748B' }
       },
-    },
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
+      x: {
+        grid: { display: false },
+        ticks: { font: { family: 'Inter' }, color: '#64748B' }
+      }
+    }
   };
 
   return (
-    <div className="space-y-10">
-      {/* Chart Section */}
-      <div className="bg-white p-6 rounded-xl shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-red-600">Expense Overview</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="text-sm font-semibold text-red-500 hover:underline"
-          >
-            + Add Expense
-          </button>
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Expenses</h2>
+          <p className="text-slate-500">Track and manage your spending habits.</p>
         </div>
-        <p className="text-gray-500 mb-6">Track your spending over time and analyze your expense trends.</p>
-        {expenseData.length > 0 ? (
-          <Line data={lineData} options={lineOptions} />
-        ) : (
-          <p className="text-gray-400">No expense data available.</p>
-        )}
+        <button
+          onClick={() => setShowModal(true)}
+          className="btn btn-primary bg-rose-600 hover:bg-rose-700 focus:ring-rose-500/20"
+        >
+          <Plus size={18} /> Add Expense
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Chart Section */}
+        <div className="lg:col-span-2 card p-6">
+          <h3 className="font-bold text-slate-800 mb-6">Spending Trend</h3>
+          <div className="h-[300px]">
+            {expenseData.length > 0 ? (
+              <Line data={lineData} options={lineOptions} />
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400">
+                No data available
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Summary Card */}
+        <div className="card p-6 bg-rose-50 border-rose-100">
+          <h3 className="font-bold text-rose-800 mb-2">Total Expenses</h3>
+          <div className="mt-1">
+            <h3 className="text-3xl font-bold text-rose-600">
+              ₹{expenseData.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString('en-IN')}
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">Total Expenses</p>
+          </div>
+          <p className="text-sm text-rose-700/80">
+            Monitor your spending closely. Try to keep your expenses within your budget limits.
+          </p>
+          <div className="mt-6 pt-6 border-t border-rose-200/50">
+            <p className="text-xs font-semibold text-rose-800 uppercase tracking-wider mb-2">Top Categories</p>
+            <div className="flex flex-wrap gap-2">
+              {/* Placeholder for top categories */}
+              <span className="bg-white/50 text-rose-700 px-2 py-1 rounded text-xs">Food</span>
+              <span className="bg-white/50 text-rose-700 px-2 py-1 rounded text-xs">Transport</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Expense List */}
-      <div className="bg-white p-6 rounded-xl shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-red-600">Expense Sources</h3>
-          <button className="text-red-500 hover:text-red-700">
-            <Download size={20} />
-          </button>
+      <div className="card overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h3 className="font-bold text-slate-800">History</h3>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search expenses..."
+                className="input-field pl-9 py-2 text-sm"
+              />
+            </div>
+            <button className="btn btn-secondary px-3">
+              <Filter size={16} />
+            </button>
+            <button className="btn btn-secondary px-3">
+              <Download size={16} />
+            </button>
+          </div>
         </div>
 
-        <ul className="space-y-4">
-          {expenseData.length > 0 ? (
+        <div className="divide-y divide-slate-50">
+          {loading ? (
+            <div className="p-8 text-center text-slate-400">Loading...</div>
+          ) : expenseData.length > 0 ? (
             expenseData.map(item => (
-              <li key={item._id} className="flex justify-between items-center border-b pb-2">
+              <div key={item._id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
                 <div className="flex items-center gap-4">
-                  <span className="text-2xl">{item.icon || '💸'}</span>
+                  <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg">
+                    {item.icon || '💸'}
+                  </div>
                   <div>
-                    <p className="font-medium">{item.title}</p>
-                    <p className="text-gray-400 text-sm">{new Date(item.date).toLocaleDateString()}</p>
+                    <p className="font-medium text-slate-900">{item.title}</p>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <span>{new Date(item.date).toLocaleDateString()}</span>
+                      <span>•</span>
+                      <span>{item.category || 'Uncategorized'}</span>
+                    </div>
                   </div>
                 </div>
-                <p className="font-semibold text-red-600">-${item.amount}</p>
-              </li>
+                <div className="flex items-center gap-6">
+                  <span className="font-semibold text-rose-600">-₹{item.amount.toLocaleString('en-IN')}</span>
+                  <button
+                    onClick={() => handleDelete(item._id)}
+                    className="text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all p-2"
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
             ))
           ) : (
-            <li className="text-gray-400">No expense sources to display.</li>
+            <div className="p-12 text-center text-slate-400">
+              <p>No expense records found.</p>
+              <button onClick={() => setShowModal(true)} className="text-indigo-600 hover:underline mt-2 text-sm">
+                Add your first expense
+              </button>
+            </div>
           )}
-        </ul>
+        </div>
       </div>
 
       {showModal && (

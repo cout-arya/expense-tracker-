@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+import { FaTimes, FaSpinner } from 'react-icons/fa';
 import API from '../utils/api';
+import { EXPENSE_CATEGORIES } from '../utils/constants';
 
 export default function AddBudgetModal({ onClose, onBudgetAdded }) {
   const [form, setForm] = useState({
     category: '',
     amount: '',
-    month: '',
+    month: new Date().toLocaleString('default', { month: 'long' }),
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting Budget:', form);
+    setLoading(true);
     try {
       await API.post('/budget/add', {
-        category: form.category.toLowerCase(),
+        category: form.category,
         amount: Number(form.amount),
         month: form.month,
       });
@@ -26,77 +29,123 @@ export default function AddBudgetModal({ onClose, onBudgetAdded }) {
       onClose();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to set budget');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 w-[400px] space-y-5 border border-white/30"
-      >
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Set Budget</h2>
+    <div className="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[60] animate-fade-in backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in relative">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <h3 className="text-xl font-bold text-slate-900">Set Budget</h3>
           <button
-            type="button"
             onClick={onClose}
-            className="text-xl text-gray-500 hover:text-red-500 transition"
+            className="text-slate-400 hover:text-slate-600 transition"
+            disabled={loading}
           >
-            ✕
+            <FaTimes size={20} />
           </button>
         </div>
 
-        <input
-          name="category"
-          placeholder="Category (e.g., groceries, rent)"
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-400 outline-none"
-          required
-        />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Category
+            </label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="input-field appearance-none"
+              required
+              disabled={loading}
+            >
+              <option value="">Select category</option>
+              {EXPENSE_CATEGORIES.map(cat => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <input
-          type="number"
-          name="amount"
-          placeholder="Monthly Budget Amount"
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-400 outline-none"
-          required
-        />
+          {/* Amount */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Monthly Limit
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
+              <input
+                type="number"
+                name="amount"
+                value={form.amount}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0.01"
+                className="input-field pl-8"
+                required
+                disabled={loading}
+              />
+            </div>
+          </div>
 
-        <select
-          name="month"
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-400 outline-none"
-          required
-        >
-          <option value="">Select Month</option>
-          {[
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July',
-            'August',
-            'September',
-            'October',
-            'November',
-            'December',
-          ].map((month) => (
-            <option key={month} value={month}>
-              {month}
-            </option>
-          ))}
-        </select>
+          {/* Month */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Month
+            </label>
+            <select
+              name="month"
+              value={form.month}
+              onChange={handleChange}
+              className="input-field appearance-none"
+              required
+              disabled={loading}
+            >
+              <option value="">Select Month</option>
+              {[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ].map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <button
-          type="submit"
-          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg w-full transition"
-        >
-          Set Budget
-        </button>
-      </form>
+          {/* Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary flex-1"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary flex-1"
+            >
+              {loading ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  Setting...
+                </>
+              ) : (
+                'Set Budget'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

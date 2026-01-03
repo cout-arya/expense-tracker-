@@ -1,1 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Modern Professional Color Palette */
+  --primary: #4F46E5;
+  /* Indigo 600 */
+  --primary-hover: #4338CA;
+  /* Indigo 700 */
+  --secondary: #64748B;
+  /* Slate 500 */
+
+  --bg-app: #F8FAFC;
+  /* Slate 50 */
+  --bg-card: #FFFFFF;
+
+  --text-main: #0F172A;
+  /* Slate 900 */
+  --text-muted: #64748B;
+  /* Slate 500 */
+
+  --border-subtle: #E2E8F0;
+  /* Slate 200 */
+
+  /* Semantic Colors */
+  --success: #10B981;
+  /* Emerald 500 */
+  --danger: #EF4444;
+  /* Red 500 */
+  --warning: #F59E0B;
+  /* Amber 500 */
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base Component Styles */
+.card {
+  @apply bg-white rounded-xl border border-slate-200 shadow-sm transition-all duration-200;
+}
+
+.card:hover {
+  @apply shadow-md border-slate-300;
+}
+
+.btn {
+  @apply px-4 py-2.5 rounded-lg font-medium transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2;
+}
+
+.btn-primary {
+  @apply bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm hover:shadow;
+}
+
+.btn-secondary {
+  @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+}
+
+.btn-danger {
+  @apply bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:text-red-700;
+}
+
+.input-field {
+  @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all;
+}
+
+.label {
+  @apply block text-sm font-medium text-slate-700 mb-1.5;
+}
+
+/* Animations - Subtle & Professional */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Custom Scrollbar for consistent feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Toastify Customization */
+.Toastify__toast {
+  @apply rounded-xl shadow-lg border border-slate-100 font-medium;
+}
+
+.Toastify__toast--success {
+  @apply border-emerald-100;
+}
+
+.Toastify__toast--error {
+  @apply border-red-100;
+}

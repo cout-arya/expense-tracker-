@@ -1,96 +1,235 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { FaTimes, FaSpinner } from 'react-icons/fa';
 import EmojiPicker from 'emoji-picker-react';
-import { toast } from 'react-toastify';
 import API from '../utils/api';
+import { INCOME_CATEGORIES } from '../utils/constants';
+import { formatDateForInput } from '../utils/helpers';
+import { toast } from 'react-toastify';
 
-export default function AddIncomeModal({ onClose, onIncomeAdded }) {
-  const [form, setForm] = useState({ title: '', amount: '', date: '', icon: '' });
-  const [showPicker, setShowPicker] = useState(false);
+function AddIncomeModal({ onClose, onIncomeAdded }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    amount: '',
+    category: '',
+    date: formatDateForInput(new Date()),
+    icon: '💵'
+  });
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [suggestedCategory, setSuggestedCategory] = useState(null);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // Auto-categorize based on title
+  useEffect(() => {
+    const debounceTimer = setTimeout(async () => {
+      if (formData.title.length >= 3) {
+        try {
+          const res = await API.post('/ai/categorize', {
+            title: formData.title,
+            type: 'income'
+          });
+
+          if (res.data.confidence > 50) {
+            setSuggestedCategory(res.data);
+            if (!formData.category) {
+              setFormData(prev => ({ ...prev, category: res.data.category }));
+            }
+          }
+        } catch (err) {
+          console.error('Failed to auto-categorize:', err);
+        }
+      }
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [formData.title]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleEmojiClick = (emojiData) => {
-    setForm({ ...form, icon: emojiData.emoji });
-    setShowPicker(false);
+    setFormData(prev => ({ ...prev, icon: emojiData.emoji }));
+    setShowEmojiPicker(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(form);
+
+    if (!formData.title || !formData.amount || !formData.category || !formData.date) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (parseFloat(formData.amount) <= 0) {
+      toast.error('Amount must be greater than 0');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await API.post('/income/add', { ...form, amount: Number(form.amount) });
-      toast.success('Income added');
+      await API.post('/income', formData);
+      toast.success('Income added successfully!');
       onIncomeAdded();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to add income');
+      console.error('Failed to add income:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/20  flex items-center justify-center z-50">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-6 w-[400px] space-y-5 border border-white/30"
-      >
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Add Income</h2>
+    <div className="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[60] animate-fade-in backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in relative">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <h3 className="text-xl font-bold text-slate-900">Add Income</h3>
           <button
-            type="button"
             onClick={onClose}
-            className="text-xl text-gray-500 hover:text-red-500 transition"
+            className="text-slate-400 hover:text-slate-600 transition"
+            disabled={loading}
           >
-            ✕
+            <FaTimes size={20} />
           </button>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Pick Icon</label>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowPicker(!showPicker)}
-              className="text-2xl border p-2 rounded-md hover:bg-gray-100  text-left"
-            >
-              {form.icon || '😀'}
-            </button>
-            {showPicker && (
-              <div className="absolute top-full mt-2 z-50">
-                <EmojiPicker onEmojiClick={handleEmojiClick} />
-              </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Title
+            </label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="e.g., Monthly Salary"
+              className="input-field"
+              required
+              disabled={loading}
+            />
+            {suggestedCategory && suggestedCategory.confidence > 50 && (
+              <p className="mt-1.5 text-xs text-indigo-600 font-medium">
+                ✨ Auto-detected as "{suggestedCategory.category}"
+              </p>
             )}
           </div>
-        </div>
 
-        <input
-          name="title"
-          placeholder="Income Source"
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-400 outline-none"
-          required
-        />
-        <input
-          type="number"
-          name="amount"
-          placeholder="Amount"
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-400 outline-none"
-          required
-        />
-        <input
-          type="date"
-          name="date"
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-400 outline-none"
-          required
-        />
-        <button
-          type="submit"
-          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-lg w-full transition"
-        >
-          Add Income
-        </button>
-      </form>
+          {/* Amount */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Amount
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
+              <input
+                type="number"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder="0.00"
+                step="0.01"
+                min="0.01"
+                className="input-field pl-8"
+                required
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Category
+            </label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="input-field appearance-none"
+              required
+              disabled={loading}
+            >
+              <option value="">Select category</option>
+              {INCOME_CATEGORIES.map(cat => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Date
+            </label>
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              className="input-field"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          {/* Icon */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Icon
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="w-full text-left input-field flex items-center"
+                disabled={loading}
+              >
+                <span className="text-xl mr-2">{formData.icon}</span>
+                <span className="text-slate-400 text-sm">Tap to change</span>
+              </button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-full left-0 z-50 mb-2 shadow-2xl rounded-lg border border-slate-100">
+                  <EmojiPicker onEmojiClick={handleEmojiClick} width={300} height={350} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary flex-1"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 flex-1"
+            >
+              {loading ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Income'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
+
+export default AddIncomeModal;

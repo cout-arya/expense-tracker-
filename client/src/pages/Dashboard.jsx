@@ -86,7 +86,7 @@ function Dashboard() {
     cutout: '75%',
     plugins: {
       legend: {
-        position: 'right',
+        position: 'bottom',
         labels: {
           usePointStyle: true,
           boxWidth: 8,

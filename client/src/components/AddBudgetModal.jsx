@@ -35,10 +35,10 @@ export default function AddBudgetModal({ onClose, onBudgetAdded }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[60] animate-fade-in backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/30 flex items-start justify-center z-[60] animate-fade-in backdrop-blur-md pt-20">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in relative">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+        <div className="flex items-center justify-between p-6 pb-0">
           <h3 className="text-xl font-bold text-slate-900">Set Budget</h3>
           <button
             onClick={onClose}

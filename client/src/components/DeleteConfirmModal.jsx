@@ -2,10 +2,10 @@ import { FaTimes } from 'react-icons/fa';
 
 function DeleteConfirmModal({ onClose, onConfirm, item, type = 'item' }) {
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+        <div className="fixed inset-0 bg-black/30 flex items-start justify-center z-50 animate-fadeIn backdrop-blur-md pt-20">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fadeIn">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b">
+                <div className="flex items-center justify-between p-6 pb-0">
                     <h3 className="text-2xl font-bold text-gray-800">Confirm Delete</h3>
                     <button
                         onClick={onClose}

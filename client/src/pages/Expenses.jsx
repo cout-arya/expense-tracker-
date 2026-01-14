@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -11,8 +11,10 @@ import {
   Filler
 } from 'chart.js';
 import { Download, Plus, Search, Filter, Trash2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import API from '../utils/api';
 import AddExpenseModal from '../components/AddExpenseModal';
+import FilterModal from '../components/FilterModal';
 import { toast } from 'react-toastify';
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
@@ -20,7 +22,16 @@ ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip,
 function Expense() {
   const [expenseData, setExpenseData] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    categories: [],
+    dateFrom: '',
+    dateTo: '',
+    amountMin: '',
+    amountMax: ''
+  });
 
   const fetchExpenses = async () => {
     try {
@@ -49,6 +60,74 @@ function Expense() {
         toast.error('Failed to delete expense');
       }
     }
+  };
+
+  // Get unique categories from expense data
+  const availableCategories = useMemo(() => {
+    const categories = [...new Set(expenseData.map(item => item.category).filter(Boolean))];
+    return categories.length > 0 ? categories : ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Healthcare', 'Other'];
+  }, [expenseData]);
+
+  // Filter and search logic
+  const filteredData = useMemo(() => {
+    return expenseData.filter(item => {
+      // Search filter
+      const matchesSearch = searchQuery === '' ||
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.category && item.category.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      // Category filter
+      const matchesCategory = filters.categories.length === 0 ||
+        filters.categories.includes(item.category);
+
+      // Date filter
+      const itemDate = new Date(item.date);
+      const matchesDateFrom = !filters.dateFrom || itemDate >= new Date(filters.dateFrom);
+      const matchesDateTo = !filters.dateTo || itemDate <= new Date(filters.dateTo);
+
+      // Amount filter
+      const matchesAmountMin = !filters.amountMin || item.amount >= parseFloat(filters.amountMin);
+      const matchesAmountMax = !filters.amountMax || item.amount <= parseFloat(filters.amountMax);
+
+      return matchesSearch && matchesCategory && matchesDateFrom && matchesDateTo && matchesAmountMin && matchesAmountMax;
+    });
+  }, [expenseData, searchQuery, filters]);
+
+  // Excel export function
+  const handleExportToExcel = () => {
+    if (filteredData.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const exportData = filteredData.map(item => ({
+      Date: new Date(item.date).toLocaleDateString('en-IN'),
+      Title: item.title,
+      Category: item.category || 'Uncategorized',
+      Amount: item.amount,
+      Description: item.description || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Expenses');
+
+    // Auto-size columns
+    const maxWidth = exportData.reduce((w, r) => Math.max(w, r.Title.length), 10);
+    worksheet['!cols'] = [
+      { wch: 12 }, // Date
+      { wch: maxWidth }, // Title
+      { wch: 15 }, // Category
+      { wch: 12 }, // Amount
+      { wch: 30 }  // Description
+    ];
+
+    XLSX.writeFile(workbook, `Expenses_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success('Exported to Excel successfully');
+  };
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
   };
 
   const lineData = {
@@ -156,20 +235,40 @@ function Expense() {
       {/* Expense List */}
       <div className="card overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h3 className="font-bold text-slate-800">History</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="font-bold text-slate-800">History</h3>
+            {(searchQuery || filters.categories.length > 0 || filters.dateFrom || filters.dateTo || filters.amountMin || filters.amountMax) && (
+              <span className="text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded-full">
+                {filteredData.length} of {expenseData.length} results
+              </span>
+            )}
+          </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
                 placeholder="Search expenses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="input-field pl-9 py-2 text-sm"
               />
             </div>
-            <button className="btn btn-secondary px-3">
+            <button
+              onClick={() => setShowFilterModal(true)}
+              className={`btn btn-secondary px-3 ${filters.categories.length > 0 || filters.dateFrom || filters.dateTo || filters.amountMin || filters.amountMax
+                ? 'bg-rose-100 text-rose-700 border-rose-200'
+                : ''
+                }`}
+              title="Filter"
+            >
               <Filter size={16} />
             </button>
-            <button className="btn btn-secondary px-3">
+            <button
+              onClick={handleExportToExcel}
+              className="btn btn-secondary px-3"
+              title="Download Excel"
+            >
               <Download size={16} />
             </button>
           </div>
@@ -178,8 +277,8 @@ function Expense() {
         <div className="divide-y divide-slate-50">
           {loading ? (
             <div className="p-8 text-center text-slate-400">Loading...</div>
-          ) : expenseData.length > 0 ? (
-            expenseData.map(item => (
+          ) : filteredData.length > 0 ? (
+            filteredData.map(item => (
               <div key={item._id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg">
@@ -219,6 +318,16 @@ function Expense() {
 
       {showModal && (
         <AddExpenseModal onClose={() => setShowModal(false)} onExpenseAdded={fetchExpenses} />
+      )}
+
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onApplyFilters={handleApplyFilters}
+          initialFilters={filters}
+          availableCategories={availableCategories}
+          type="expense"
+        />
       )}
     </div>
   );

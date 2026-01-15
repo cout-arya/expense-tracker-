@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 
 // Create axios instance with base configuration
 const API = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: import.meta.env.PROD ? '/api' : 'http://localhost:5000/api',
     headers: {
         'Content-Type': 'application/json'
     }

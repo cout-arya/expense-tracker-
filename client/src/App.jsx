@@ -27,7 +27,13 @@ import Budget from './pages/Budget';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Insights from './pages/Insights';
+import LandingPage from './pages/LandingPage';
 import { getInitials } from './utils/helpers';
+
+function PublicRoute({ children }) {
+  const isAuthenticated = localStorage.getItem('token');
+  return isAuthenticated ? <Navigate to="/dashboard" /> : children;
+}
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = localStorage.getItem('token');
@@ -41,7 +47,7 @@ function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
 
-  const hideSidebar = location.pathname === '/login' || location.pathname === '/register';
+  const hideSidebar = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/';
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -166,7 +172,14 @@ function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={

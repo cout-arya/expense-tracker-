@@ -19,7 +19,7 @@ export default function AddBudgetModal({ onClose, onBudgetAdded }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await API.post('/budget/add', {
+      await API.post('/budget', {
         category: form.category,
         amount: Number(form.amount),
         month: form.month,

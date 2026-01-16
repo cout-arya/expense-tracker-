@@ -85,8 +85,9 @@ export default function AddBudgetModal({ onClose, onBudgetAdded }) {
                 name="amount"
                 value={form.amount}
                 onChange={handleChange}
-                placeholder="0.00"
-                min="0.01"
+                placeholder="Enter amount"
+                min="1"
+                step="1"
                 className="input-field pl-8"
                 required
                 disabled={loading}

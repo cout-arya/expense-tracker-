@@ -5,10 +5,17 @@ import API from '../utils/api';
 import { EXPENSE_CATEGORIES } from '../utils/constants';
 
 export default function AddBudgetModal({ onClose, onBudgetAdded }) {
+  const getCurrentMonth = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  };
+
   const [form, setForm] = useState({
     category: '',
     amount: '',
-    month: new Date().toLocaleString('default', { month: 'long' }),
+    month: getCurrentMonth(),
   });
   const [loading, setLoading] = useState(false);
 
@@ -109,14 +116,19 @@ export default function AddBudgetModal({ onClose, onBudgetAdded }) {
               disabled={loading}
             >
               <option value="">Select Month</option>
-              {[
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-              ].map((month) => (
-                <option key={month} value={month}>
-                  {month}
-                </option>
-              ))}
+              {Array.from({ length: 12 }, (_, i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() + i);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const value = `${year}-${month}`;
+                const label = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                return (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

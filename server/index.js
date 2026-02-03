@@ -8,6 +8,9 @@ import incomeRoutes from './routes/incomeRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import budgetRoutes from './routes/budgetRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import businessProfileRoutes from './routes/businessProfileRoutes.js';
+import clientRoutes from './routes/clientRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -33,7 +36,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
@@ -46,6 +49,9 @@ app.use('/api/expense', expenseRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/business-profile', businessProfileRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Production deployment configuration
 import path from 'path';

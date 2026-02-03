@@ -15,8 +15,49 @@ const expenseSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Education', 'Other'],
+    enum: [
+      'Food',
+      'Travel',
+      'Transport',
+      'Rent',
+      'Utilities',
+      'Office Supplies',
+      'Marketing',
+      'Professional Fees',
+      'Salaries',
+      'Taxes',
+      'Insurance',
+      'Maintenance',
+      'Shopping',
+      'Bills',
+      'Entertainment',
+      'Health',
+      'Education',
+      'Other'
+    ],
     default: 'Other'
+  },
+  vendor: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Vendor name cannot exceed 100 characters']
+  },
+  receipt: {
+    type: String, // URL to uploaded receipt file
+    trim: true
+  },
+  gstAmount: {
+    type: Number,
+    min: [0, 'GST amount cannot be negative'],
+    default: 0
+  },
+  isGstExpense: {
+    type: Boolean,
+    default: false
+  },
+  suggestedCategory: {
+    type: String,
+    trim: true
   },
   date: {
     type: Date,

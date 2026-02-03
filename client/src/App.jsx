@@ -15,7 +15,9 @@ import {
   FaChartPie,
   FaSignOutAlt,
   FaLightbulb,
-  FaUser
+  FaUser,
+  FaFileInvoice,
+  FaUsers
 } from 'react-icons/fa';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -28,6 +30,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Insights from './pages/Insights';
 import LandingPage from './pages/LandingPage';
+import BusinessProfileSetup from './pages/BusinessProfileSetup';
+import Invoices from './pages/Invoices';
+import Clients from './pages/Clients';
 import { getInitials } from './utils/helpers';
 
 function PublicRoute({ children }) {
@@ -68,6 +73,8 @@ function Layout({ children }) {
 
   const navLinks = [
     { to: '/dashboard', icon: FaHome, label: 'Dashboard' },
+    { to: '/invoices', icon: FaFileInvoice, label: 'Invoices' },
+    { to: '/clients', icon: FaUsers, label: 'Clients' },
     { to: '/income', icon: FaDollarSign, label: 'Income' },
     { to: '/expenses', icon: FaWallet, label: 'Expenses' },
     { to: '/budget', icon: FaChartPie, label: 'Budget' },
@@ -217,6 +224,23 @@ function App() {
           element={
             <ProtectedRoute>
               <Insights />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/business-profile-setup" element={<BusinessProfileSetup />} />
+        <Route
+          path="/invoices/*"
+          element={
+            <ProtectedRoute>
+              <Invoices />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clients/*"
+          element={
+            <ProtectedRoute>
+              <Clients />
             </ProtectedRoute>
           }
         />

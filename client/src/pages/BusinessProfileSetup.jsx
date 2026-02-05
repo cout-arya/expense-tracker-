@@ -47,29 +47,49 @@ const BusinessProfileSetup = () => {
 
     const [errors, setErrors] = useState({});
 
-    // Check if user already has a profile
+    const [isEditing, setIsEditing] = useState(false);
+
+    // Check if user already has a profile and fetch data if so
     useEffect(() => {
-        const checkProfile = async () => {
+        const fetchProfileData = async () => {
             try {
                 const token = localStorage.getItem('token');
                 const response = await axios.get(
-                    `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/business-profile/check`,
+                    `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/business-profile`,
                     {
                         headers: { Authorization: `Bearer ${token}` }
                     }
                 );
 
-                if (response.data.hasCompletedProfile) {
-                    // User already has a profile, redirect to dashboard
-                    navigate('/dashboard');
+                if (response.data) {
+                    // Profile exists, populate form and set editing mode
+                    setIsEditing(true);
+                    setFormData(prev => ({
+                        ...prev,
+                        ...response.data,
+                        // Ensure nested objects are handled if they exist
+                        street: response.data.address?.street || '',
+                        city: response.data.address?.city || '',
+                        state: response.data.address?.state || '',
+                        pincode: response.data.address?.pincode || '',
+                        accountNumber: response.data.bankDetails?.accountNumber || '',
+                        ifsc: response.data.bankDetails?.ifsc || '',
+                        bankName: response.data.bankDetails?.bankName || '',
+                        branch: response.data.bankDetails?.branch || ''
+                    }));
+                    // Optional: Toast to let them know they are editing
+                    // toast.info('Loaded existing business profile');
                 }
             } catch (error) {
-                console.error('Error checking profile:', error);
+                // If 404, it means no profile, which is fine - we stay in create mode
+                if (error.response?.status !== 404) {
+                    console.error('Error fetching profile:', error);
+                }
             }
         };
 
-        checkProfile();
-    }, [navigate]);
+        fetchProfileData();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -85,7 +105,7 @@ const BusinessProfileSetup = () => {
         const newErrors = {};
 
         if (step === 1) {
-            if (!formData.businessName.trim()) newErrors.businessName = 'Business name is required';
+            if (!formData.businessName?.trim()) newErrors.businessName = 'Business name is required';
             if (!formData.businessType) newErrors.businessType = 'Business type is required';
             if (formData.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gstin)) {
                 newErrors.gstin = 'Invalid GSTIN format';
@@ -162,19 +182,30 @@ const BusinessProfileSetup = () => {
                 termsAndConditions: formData.termsAndConditions
             };
 
-            await axios.post(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/business-profile`,
-                profileData,
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
+            const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/business-profile`;
 
-            toast.success('Business profile created successfully!');
+            if (isEditing) {
+                await axios.put(apiUrl, profileData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success('Business profile updated successfully!');
+            } else {
+                await axios.post(apiUrl, profileData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success('Business profile created successfully!');
+            }
+
             navigate('/dashboard');
         } catch (error) {
-            console.error('Error creating profile:', error);
-            toast.error(error.response?.data?.message || 'Failed to create business profile');
+            console.error('Error saving profile:', error);
+            // If we get "already exists" error in create mode, suggest refreshing or handle it
+            if (!isEditing && error.response?.status === 400 && error.response?.data?.message?.includes('already exists')) {
+                toast.error('Profile already exists. Switching to update mode...');
+                setIsEditing(true); // Switch to edit mode for next try
+            } else {
+                toast.error(error.response?.data?.message || 'Failed to save business profile');
+            }
         } finally {
             setLoading(false);
         }

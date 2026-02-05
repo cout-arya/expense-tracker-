@@ -1,5 +1,6 @@
 import Invoice from '../models/Invoice.js';
 import InvoiceLineItem from '../models/InvoiceLineItem.js';
+import Income from '../models/Income.js';
 import Client from '../models/Client.js';
 import BusinessProfile from '../models/BusinessProfile.js';
 import { generateInvoiceNumber } from '../services/invoiceNumberService.js';
@@ -230,6 +231,9 @@ export const updateInvoice = async (req, res) => {
             return res.status(404).json({ message: 'Invoice not found' });
         }
 
+        // Check if status is being changed to Paid
+        const isMarkingAsPaid = invoiceData.status === 'Paid' && invoice.status !== 'Paid';
+
         // Update invoice fields
         Object.assign(invoice, invoiceData);
 
@@ -284,6 +288,23 @@ export const updateInvoice = async (req, res) => {
         const updatedInvoice = await Invoice.findById(invoice._id)
             .populate('clientId')
             .populate('lineItems');
+
+        // If marked as paid during update, create Income record
+        if (isMarkingAsPaid) {
+            try {
+                await Income.create({
+                    userId,
+                    title: `Invoice #${updatedInvoice.invoiceNumber} - ${updatedInvoice.clientId.clientName}`,
+                    amount: updatedInvoice.totalAmount,
+                    category: 'Business',
+                    date: updatedInvoice.paymentDate || new Date(),
+                    icon: '💰'
+                });
+                console.log(`Auto-generated income for Invoice #${updatedInvoice.invoiceNumber}`);
+            } catch (incomeError) {
+                console.error('Failed to auto-generate income:', incomeError);
+            }
+        }
 
         res.status(200).json({
             message: 'Invoice updated successfully',
@@ -350,8 +371,18 @@ export const markInvoiceAsPaid = async (req, res) => {
         const invoiceId = req.params.id;
         const { paymentDate, paymentMethod, paymentReference } = req.body;
 
-        const invoice = await Invoice.findOneAndUpdate(
-            { _id: invoiceId, userId },
+        // Check if already paid to avoid duplicate income entries
+        const existingInvoice = await Invoice.findOne({ _id: invoiceId, userId });
+        if (!existingInvoice) {
+            return res.status(404).json({ message: 'Invoice not found' });
+        }
+
+        if (existingInvoice.status === 'Paid') {
+            return res.status(400).json({ message: 'Invoice is already marked as paid' });
+        }
+
+        const invoice = await Invoice.findByIdAndUpdate(
+            invoiceId,
             {
                 status: 'Paid',
                 paymentDate: paymentDate || new Date(),
@@ -361,12 +392,24 @@ export const markInvoiceAsPaid = async (req, res) => {
             { new: true }
         ).populate('clientId').populate('lineItems');
 
-        if (!invoice) {
-            return res.status(404).json({ message: 'Invoice not found' });
+        // Create Income record automatically
+        try {
+            await Income.create({
+                userId,
+                title: `Invoice #${invoice.invoiceNumber} - ${invoice.clientId.clientName}`,
+                amount: invoice.totalAmount,
+                category: 'Business',
+                date: invoice.paymentDate || new Date(),
+                icon: '💰'
+            });
+            console.log(`Auto-generated income for Invoice #${invoice.invoiceNumber}`);
+        } catch (incomeError) {
+            console.error('Failed to auto-generate income:', incomeError);
+            // Don't fail the request, just log it
         }
 
         res.status(200).json({
-            message: 'Invoice marked as paid',
+            message: 'Invoice marked as paid and income recorded',
             invoice
         });
     } catch (error) {

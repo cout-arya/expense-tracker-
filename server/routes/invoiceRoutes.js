@@ -17,6 +17,7 @@ const router = express.Router();
 router.use(protect);
 
 // Apply business profile check to all invoice routes
+// Business profile is required for all invoice operations
 router.use(checkBusinessProfile);
 
 // Invoice statistics

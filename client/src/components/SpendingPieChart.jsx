@@ -9,27 +9,27 @@ const SpendingPieChart = () => {
   const [chartData, setChartData] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/stats/spending-summary', {
+    axios.get('http://localhost:5001/api/stats/spending-summary', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     })
-    .then((res) => {
-      const labels = res.data.map(item => item._id);
-      const data = res.data.map(item => item.total);
-      setChartData({
-        labels,
-        datasets: [{
-          label: 'Spending by Category',
-          data,
-          backgroundColor: ['#7C3AED', '#C084FC', '#A78BFA', '#DDD6FE'],
-          borderWidth: 1,
-        }]
+      .then((res) => {
+        const labels = res.data.map(item => item._id);
+        const data = res.data.map(item => item.total);
+        setChartData({
+          labels,
+          datasets: [{
+            label: 'Spending by Category',
+            data,
+            backgroundColor: ['#7C3AED', '#C084FC', '#A78BFA', '#DDD6FE'],
+            borderWidth: 1,
+          }]
+        });
+      })
+      .catch((err) => {
+        console.error('Failed to load chart data:', err);
       });
-    })
-    .catch((err) => {
-      console.error('Failed to load chart data:', err);
-    });
   }, []);
 
   if (!chartData) return <p>Loading chart...</p>;

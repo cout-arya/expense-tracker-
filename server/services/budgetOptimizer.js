@@ -121,7 +121,14 @@ export const analyzeBudgetPerformance = (budgets, actualSpending) => {
     Object.keys(budgets).forEach(category => {
         const budget = budgets[category];
         const actual = actualSpending[category] || 0;
-        const percentUsed = (actual / budget) * 100;
+
+        // Handle compilation of budget usage
+        let percentUsed = 0;
+        if (budget > 0) {
+            percentUsed = (actual / budget) * 100;
+        } else if (actual > 0) {
+            percentUsed = 100; // If budget is 0 but spent something, treat as 100% (or more)
+        }
 
         let status = 'good';
         let message = `${category}: On track`;

@@ -39,7 +39,7 @@ const CreateInvoice = () => {
         address: { state: '' }
     });
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
     const INDIAN_STATES = [
         'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -87,16 +87,23 @@ const CreateInvoice = () => {
             const response = await axios.get(`${API_URL}/api/business-profile`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setBusinessProfile(response.data.businessProfile);
 
-            if (response.data.businessProfile.termsAndConditions) {
+            // Backend returns profile directly, not wrapped in businessProfile property
+            setBusinessProfile(response.data);
+
+            // Safely access termsAndConditions with optional chaining
+            if (response.data?.termsAndConditions) {
                 setFormData(prev => ({
                     ...prev,
-                    termsAndConditions: response.data.businessProfile.termsAndConditions
+                    termsAndConditions: response.data.termsAndConditions
                 }));
             }
         } catch (error) {
             console.error('Error fetching business profile:', error);
+            // Don't throw error if profile doesn't exist - it's optional for invoice creation
+            if (error.response?.status === 404) {
+                console.log('No business profile found - user can still create invoices');
+            }
         }
     };
 

@@ -30,15 +30,19 @@ Built with the MERN stack (MongoDB, Express, React, Node.js), TruBalance ensures
 
 ## 📸 Features & Walkthrough
 
-### 1. Secure Authentication
+### 1. Landing Page
+Clean and modern landing page introducing the application's value proposition.
+![Landing Page](docs/landing_page_screenshot.png)
+
+### 2. Secure Authentication
 Secure user registration and login system to protect your financial data.
 ![Login Page](docs/login_screenshot.png)
 
-### 2. Dashboard
+### 3. Dashboard
 Your financial command center. View real-time stats on total income, expenses, and balance. Quick access buttons allow you to immediately log an expense or create an invoice.
 ![Dashboard](docs/dashboard_screenshot.png)
 
-### 3. Invoice Management
+### 4. Invoice Management
 Create professional invoices with automatic GST calculation.
 *   **Create:** Easy-to-use form for adding clients, line items, and tax details.
 *   **Track:** Monitor status (Draft, Sent, Paid, Overdue).
@@ -46,13 +50,24 @@ Create professional invoices with automatic GST calculation.
 ![Invoice List](docs/invoice_list_screenshot.png)
 ![Create Invoice](docs/create_invoice_screenshot.png)
 
-### 4. Client Management
+### 5. Client Management
 Keep all your client details in one place for quick invoicing. Store GSTIN, contact details, and addresses.
 ![Client List](docs/clients_screenshot.png)
 
-### 5. Expense Tracking & AI Insights
-Log expenses with categories like "Food", "Transport", "Utilities". Our AI analyzes your spending patterns to provide actionable budget advice.
-![Expense List](docs/expenses_screenshot.png)
+### 6. Income Tracking
+Visualize your earnings with clear charts and transaction history.
+![Income Page](docs/income_screenshot.png)
+
+### 7. Expense Tracking
+Log and categorize expenses to see exactly where your money goes.
+![Expenses Page](docs/expenses_screenshot.png)
+
+### 8. Smart Budgeting
+Set limits for categories like Food or Shopping and get alerts when you're close to overspending.
+![Budget Page](docs/budget_screenshot.png)
+
+### 9. AI Insights
+Get personalized financial advice and monthly reports powered by AI.
 ![AI Insights](docs/insights_screenshot.png)
 
 ---

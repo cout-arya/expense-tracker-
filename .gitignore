@@ -40,3 +40,5 @@ coverage/
 # Temporary files
 *.tmp
 .cache/
+
+client/.puppeteer/

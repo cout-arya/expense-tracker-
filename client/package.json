@@ -16,6 +16,7 @@
     "chart.js": "^4.4.9",
     "emoji-picker-react": "^4.12.2",
     "lucide-react": "^0.511.0",
+    "puppeteer": "^24.37.1",
     "react": "^19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.0",
